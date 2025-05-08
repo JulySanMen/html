@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unirse o Crear una Sala</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-900 to-gray-900 text-white">
+    <div class="w-full max-w-md p-6 bg-gray-800 rounded-2xl shadow-2xl text-center border border-gray-700">
+        <h1 class="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422M6.16 10.578L12 14v7m0 0l-6-3.5m6 3.5l6-3.5" />
+            </svg>
+            Unirse o Crear una Sala
+        </h1>
+        
+        <!-- Unirse a una sala -->
+        <input id="codigo" type="text" placeholder="Ingresa el código" class="w-full mt-4 p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button id="ingresar" class="mt-4 w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">Ingresar</button>
+        
+        <hr class="my-6 border-gray-600">
+        
+        <!-- Crear una sala -->
+        <button id="mostrarFormulario" class="w-full p-3 bg-green-600 hover:bg-green-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">Crear una Sala</button>
+        
+        <form id="formCrearSala" class="mt-4 hidden">
+            <input id="nombreSala" type="text" placeholder="Nombre de la sala" class="w-full p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-green-500">
+            <textarea id="descripcionSala" placeholder="Descripción de la sala" class="w-full mt-2 p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+            <button id="crearSala" type="button" class="mt-4 w-full p-3 bg-green-600 hover:bg-green-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">Crear</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("ingresar").addEventListener("click", async () => {
+            const codigo = document.getElementById("codigo").value.trim();
+            if (!codigo) {
+                Swal.fire("⚠️ Error", "Ingresa un código válido", "warning");
+                return;
+            }
+            localStorage.setItem("codigoSala", codigo);
+            console.log(localStorage.getItem("token"));
+            try {
+                const response = await fetch(`http://192.168.125.42:8080/api/v1/salas/salas/unirse/${codigo}`, { method: "POST",
+                    headers: { "Content-Type": "application/json", "authorization": "Bearer " + localStorage.getItem("token") }
+                 });
+                const data = await response.json();
+                console.log("Código de la sala almacenado:", localStorage.getItem("codigoSala"));
+                if (!response.ok) throw new Error(data.error);
+                Swal.fire("✅ Éxito", data.mensaje, "success").then(() => {
+                    window.location.href = "mensajes.html";
+                });
+            } catch (error) {
+                Swal.fire("❌ Error", error.message, "error");
+            }
+        });
+
+        document.getElementById("mostrarFormulario").addEventListener("click", () => {
+            document.getElementById("formCrearSala").classList.toggle("hidden");
+        });
+
+        document.getElementById("crearSala").addEventListener("click", async () => {
+            const nombre = document.getElementById("nombreSala").value.trim();
+            const descripcion = document.getElementById("descripcionSala").value.trim();
+            if (!nombre || !descripcion) {
+                Swal.fire("⚠️ Error", "Ingresa el nombre y la descripción de la sala", "warning");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://192.168.125.42:8080/api/v1/salas/salas`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ nombre, descripcion })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+                localStorage.setItem("codigoSala", data.codigo);
+                Swal.fire("✅ Sala creada", `Código: ${data.codigo}`, "success").then(() => {
+                    window.location.href = "mensajes.html";
+                });
+            } catch (error) {
+                Swal.fire("❌ Error", error.message, "error");
+            }
+        });
+    </script>
+</body>
+</html>

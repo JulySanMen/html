@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Registro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-900 to-gray-900 text-white">
+
+    <div class="w-full max-w-md p-6 bg-gray-800 rounded-2xl shadow-2xl text-center border border-gray-700">
+        <h2 class="text-2xl font-bold text-center mb-4">Iniciar sesión</h2>
+        <form id="loginForm">
+            <input type="username" id="nombre" placeholder="Nombre" class="w-full mt-4 p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="contrasena" placeholder="Contraseña" class="w-full mt-4 p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="submit" class="mt-4 w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">Ingresar</button>
+        </form>
+
+        <p class="text-center text-gray-500 mt-4">¿No tienes cuenta? <a href="#" id="toggleRegister" class="text-blue-500">Regístrate</a></p>
+
+        <div id="registerSection" class="hidden">
+            <h2 class="text-2xl font-bold text-center mb-4">Registro</h2>
+            <form id="registerForm">
+                <input type="text" id="nombreR" placeholder="Nombre de usuario" class="w-full mt-4 p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="contrasenaR" placeholder="Contraseña" class="w-full mt-4 p-3 text-lg text-center rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="mt-4 w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">Registrar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Alternar entre login y registro
+        document.getElementById('toggleRegister').addEventListener('click', function () {
+            document.getElementById('registerSection').classList.toggle('hidden');
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+            const contrasena = document.getElementById('contrasena').value;
+
+            const response = await fetch('http://192.168.125.42:8080/api/v1/users/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({nombre:nombre, contrasena:contrasena})
+            });
+
+            const data = await response.json();
+            token = data.token
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', nombre);
+            console.log(token)
+            window.location.href="unirse.html"
+        });
+
+        // Registro
+        document.getElementById('registerForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const nombre = document.getElementById('nombreR').value;
+            const contrasena = document.getElementById('contrasenaR').value;
+
+            const response = await fetch('http://192.168.125.42:8080/api/v1/users/user/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({nombre:nombre, contrasena:contrasena})
+            });
+
+            const data = await response.json();
+            alert("CREADO");
+        });
+    </script>
+
+</body>
+</html>

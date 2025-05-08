@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat de la Sala</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-900 to-gray-900 text-white">
+    <!-- Header -->
+    <header class="w-full max-w-lg p-4 bg-gray-800 rounded-t-2xl shadow-md flex justify-between items-center">
+        <h1 class="text-xl font-bold">Chat de la Sala</h1>
+        <button id="logoutButton" class="p-2 bg-red-600 hover:bg-red-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <!-- Chat Container -->
+    <div class="w-full max-w-lg p-6 bg-gray-800 rounded-b-2xl shadow-2xl border border-gray-700">
+        <div id="chatBox" class="h-80 overflow-y-auto bg-gray-700 p-4 rounded-md mb-4"></div>
+        <input id="messageInput" type="text" placeholder="Escribe tu mensaje..." class="w-full p-3 text-lg rounded-md bg-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button id="sendButton" class="mt-4 w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-md font-bold transition-all duration-300 shadow-md hover:shadow-lg">Enviar</button>
+    </div>
+
+    <script>
+        const socket = io('http://192.168.125.77:3001');
+        const chatBox = document.getElementById("chatBox");
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+        const logoutButton = document.getElementById("logoutButton");
+        const codigoSala = localStorage.getItem("codigoSala");
+        const user = localStorage.getItem("user");
+
+        if (!codigoSala) {
+            Swal.fire("❌ Error", "No tienes un código de sala válido", "error").then(() => {
+                window.location.href = "/";
+            });
+        }
+
+        async function loadMessages() {
+            const response = await fetch(`http://192.168.125.42:8080/api/v1/chats/chat/messages/${codigoSala}`, {
+                method: "GET",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "authorization": "Bearer " + localStorage.getItem("token")
+                }
+            });
+            const messages = await response.json();
+            chatBox.innerHTML = "";
+            messages.forEach(({ user, message, timestamp }) => {
+                const messageElement = document.createElement("div");
+                messageElement.classList.add("mb-2", "p-2", "rounded-md", user === "Sistema" ? "bg-gray-600" : "bg-blue-500");
+                messageElement.innerHTML = `<strong>${user}:</strong> ${message} <br><small>${new Date(timestamp).toLocaleTimeString()}</small>`;
+                chatBox.appendChild(messageElement);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        socket.on("message", ({ user, message, timestamp }) => {
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("mb-2", "p-2", "rounded-md", user === "Sistema" ? "bg-gray-600" : "bg-green-500");
+            messageElement.innerHTML = `<strong>${user}:</strong> ${message} <br><small>${new Date(timestamp).toLocaleTimeString()}</small>`;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        sendButton.addEventListener("click", () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit("sendMessage", { message, user, sala: codigoSala });
+                messageInput.value = "";
+            }
+        });
+
+        // Cerrar sesión
+        logoutButton.addEventListener("click", () => {
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "Se cerrará tu sesión y volverás a la página de inicio.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sí, cerrar sesión"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.clear(); // Limpia todos los datos del almacenamiento local
+                    window.location.href = "login.html"; // Redirige a la página de inicio
+                }
+            });
+        });
+
+        loadMessages();
+    </script>
+</body>
+</html>
